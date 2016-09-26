@@ -37,9 +37,7 @@ import org.jetbrains.kotlin.load.kotlin.DeserializationComponentsForJava
 import org.jetbrains.kotlin.load.kotlin.JvmVirtualFileFinderFactory
 import org.jetbrains.kotlin.platform.JvmBuiltIns
 import org.jetbrains.kotlin.resolve.*
-import org.jetbrains.kotlin.resolve.jvm.JavaClassFinderPostConstruct
 import org.jetbrains.kotlin.resolve.jvm.JavaDescriptorResolver
-import org.jetbrains.kotlin.resolve.jvm.JavaLazyAnalyzerPostConstruct
 import org.jetbrains.kotlin.resolve.jvm.platform.JvmPlatform
 import org.jetbrains.kotlin.resolve.lazy.FileScopeProviderImpl
 import org.jetbrains.kotlin.resolve.lazy.ResolveSession
@@ -72,7 +70,6 @@ fun StorageComponentContainer.configureJavaTopDownAnalysis(
     useImpl<JavaPropertyInitializerEvaluatorImpl>()
     useInstance(SamConversionResolverImpl)
     useImpl<JavaSourceElementFactoryImpl>()
-    useImpl<JavaLazyAnalyzerPostConstruct>()
     useInstance(InternalFlexibleTypeTransformer)
 
     useInstance(languageVersionSettings)
@@ -103,7 +100,7 @@ fun createContainerForLazyResolveWithJava(
         useImpl<LazyResolveToken>()
     }
 }.apply {
-    javaAnalysisInit()
+    get<JavaClassFinderImpl>().initialize()
 }
 
 
@@ -121,11 +118,6 @@ fun createContainerForTopDownAnalyzerForJvm(
 ).apply {
     get<SingleModuleClassResolver>().resolver = get<JavaDescriptorResolver>()
     initJvmBuiltInsForTopDownAnalysis()
-}
-
-fun StorageComponentContainer.javaAnalysisInit() {
-    get<JavaClassFinderImpl>().initialize()
-    get<JavaClassFinderPostConstruct>().postCreate()
 }
 
 // 'initBuiltIns' body cannot be merged with 'javaAnalysisInit' because the latter is used in IDE,

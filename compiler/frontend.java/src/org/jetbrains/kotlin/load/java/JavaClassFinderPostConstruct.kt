@@ -14,31 +14,25 @@
  * limitations under the License.
  */
 
-package org.jetbrains.kotlin.resolve.jvm
+package org.jetbrains.kotlin.load.java
 
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlin.resolve.lazy.KotlinCodeAnalyzer
-import javax.inject.Inject
-import javax.annotation.PostConstruct
 import org.jetbrains.kotlin.resolve.BindingTrace
 import org.jetbrains.kotlin.resolve.CodeAnalyzerInitializer
+import org.jetbrains.kotlin.resolve.lazy.KotlinCodeAnalyzer
+import javax.inject.Inject
 
-open class JavaClassFinderPostConstruct {
-    @PostConstruct
-    open fun postCreate() {}
-}
-
-class JavaLazyAnalyzerPostConstruct : JavaClassFinderPostConstruct() {
-    var project: Project? = null
+class JavaClassFinderPostConstruct {
+    lateinit var project: Project
         @Inject set
 
-    var trace: BindingTrace? = null
+    lateinit var trace: BindingTrace
         @Inject set
 
-    var codeAnalyzer: KotlinCodeAnalyzer? = null
+    lateinit var codeAnalyzer: KotlinCodeAnalyzer
         @Inject set
 
-    @PostConstruct override fun postCreate() {
-        CodeAnalyzerInitializer.getInstance(project!!).initialize(trace!!, codeAnalyzer!!.moduleDescriptor, codeAnalyzer!!)
+    fun initializeCodeAnalyzer() {
+        CodeAnalyzerInitializer.getInstance(project).initialize(trace, codeAnalyzer.moduleDescriptor, codeAnalyzer)
     }
 }

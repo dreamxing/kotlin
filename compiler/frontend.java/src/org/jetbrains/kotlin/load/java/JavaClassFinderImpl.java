@@ -32,7 +32,6 @@ import org.jetbrains.kotlin.load.java.structure.impl.JavaClassImpl;
 import org.jetbrains.kotlin.load.java.structure.impl.JavaPackageImpl;
 import org.jetbrains.kotlin.name.ClassId;
 import org.jetbrains.kotlin.name.FqName;
-import org.jetbrains.kotlin.resolve.jvm.JavaClassFinderPostConstruct;
 import org.jetbrains.kotlin.resolve.jvm.KotlinJavaPsiFacade;
 
 import javax.annotation.PostConstruct;
@@ -42,9 +41,9 @@ import java.util.Set;
 public class JavaClassFinderImpl implements JavaClassFinder {
     private Project project;
     private GlobalSearchScope baseScope;
-
     private GlobalSearchScope javaSearchScope;
     private KotlinJavaPsiFacade javaFacade;
+    private JavaClassFinderPostConstruct postConstruct;
 
     @Inject
     public void setProject(@NotNull Project project) {
@@ -57,8 +56,8 @@ public class JavaClassFinderImpl implements JavaClassFinder {
     }
 
     @Inject
-    public void setComponentPostConstruct(@NotNull JavaClassFinderPostConstruct finderPostConstruct) {
-        // Only activate post create
+    public void setComponentPostConstruct(@NotNull JavaClassFinderPostConstruct postConstruct) {
+        this.postConstruct = postConstruct;
     }
 
     public class FilterOutKotlinSourceFilesScope extends DelegatingGlobalSearchScope {
@@ -93,6 +92,7 @@ public class JavaClassFinderImpl implements JavaClassFinder {
     public void initialize() {
         javaSearchScope = new FilterOutKotlinSourceFilesScope(baseScope);
         javaFacade = KotlinJavaPsiFacade.getInstance(project);
+        postConstruct.initializeCodeAnalyzer();
     }
 
     @Nullable
