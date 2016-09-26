@@ -84,24 +84,24 @@ fun createContainerForLazyResolveWithJava(
         declarationProviderFactory: DeclarationProviderFactory,
         moduleContentScope: GlobalSearchScope,
         moduleClassResolver: ModuleClassResolver,
-        targetEnvironment: TargetEnvironment = CompilerEnvironment,
+        targetEnvironment: TargetEnvironment,
+        lookupTracker: LookupTracker,
         packagePartProvider: PackagePartProvider,
-        languageVersionSettings: LanguageVersionSettings
-): ComponentProvider = createContainer("LazyResolveWithJava", JvmPlatform) {
-    //TODO: idea specific code
-    useInstance(packagePartProvider)
-
+        languageVersionSettings: LanguageVersionSettings,
+        useLazyResolve: Boolean
+): StorageComponentContainer = createContainer("LazyResolveWithJava", JvmPlatform) {
     configureModule(moduleContext, JvmPlatform, bindingTrace)
+    configureJavaTopDownAnalysis(moduleContentScope, moduleContext.project, lookupTracker, languageVersionSettings)
 
-    configureJavaTopDownAnalysis(moduleContentScope, moduleContext.project, LookupTracker.DO_NOTHING, languageVersionSettings)
-
+    useInstance(packagePartProvider)
     useInstance(moduleClassResolver)
-
     useInstance(declarationProviderFactory)
 
     targetEnvironment.configure(this)
 
-    useImpl<LazyResolveToken>()
+    if (useLazyResolve) {
+        useImpl<LazyResolveToken>()
+    }
 }.apply {
     javaAnalysisInit()
 }
@@ -115,19 +115,11 @@ fun createContainerForTopDownAnalyzerForJvm(
         lookupTracker: LookupTracker,
         packagePartProvider: PackagePartProvider,
         languageVersionSettings: LanguageVersionSettings
-): ComponentProvider = createContainer("TopDownAnalyzerForJvm", JvmPlatform) {
-    useInstance(packagePartProvider)
-
-    configureModule(moduleContext, JvmPlatform, bindingTrace)
-    configureJavaTopDownAnalysis(moduleContentScope, moduleContext.project, lookupTracker, languageVersionSettings)
-
-    useInstance(declarationProviderFactory)
-
-    CompilerEnvironment.configure(this)
-
-    useImpl<SingleModuleClassResolver>()
-}.apply {
-    javaAnalysisInit()
+): ComponentProvider = createContainerForLazyResolveWithJava(
+        moduleContext, bindingTrace, declarationProviderFactory, moduleContentScope, SingleModuleClassResolver(),
+        CompilerEnvironment, lookupTracker, packagePartProvider, languageVersionSettings, useLazyResolve = false
+).apply {
+    get<SingleModuleClassResolver>().resolver = get<JavaDescriptorResolver>()
     initJvmBuiltInsForTopDownAnalysis()
 }
 
